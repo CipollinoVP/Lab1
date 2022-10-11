@@ -88,12 +88,12 @@ void LU_Blocks(std::vector<std::vector<double>> &A, int b){
                 A[j][k] = subA[j-i][k-i];
             }
         }
-        if ((int) A[0].size()-i-b-1 > 0) {
+        if ((int) A[0].size()-i-b > 0) {
             std::vector<std::vector<double>> subL(b);
             for (int j = i; j < i+b; ++j) {
                 subL[j-i] = std::vector<double>(b);
                 subL[j-i][j-i] = 1;
-                for (int k = j-i+1; k < b; ++k) {
+                for (int k = j-i; k < b; ++k) {
                     subL[j-i][k] = 0;
                 }
                 for (int k = i; k < j-i; ++k) {
