@@ -228,8 +228,6 @@ void check_LU_Blocks(std::vector<std::vector<double>> &A, int b){
 
 int main() {
     srand(time(0));
-    omp_set_dynamic(0);      // запретить библиотеке openmp менять число потоков во время исполнения
-    omp_set_num_threads(10); // установить число потоков в 10
     int n;
     int m;
     std::cin >> n >> m;
@@ -248,7 +246,7 @@ int main() {
     matrix_out(B);
     std::cout << "Разница между изначальной и разложением" << std::endl;
     matrix_out(difference(A,B));
-    check_LU_Blocks(A,4);
+    check_LU_Blocks(A,32);
     std::cout << "После блочного разложения" << std::endl;
     matrix_out(A);
     for (int i = 0; i < A.size(); ++i) {
