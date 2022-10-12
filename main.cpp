@@ -30,7 +30,7 @@ std::vector<std::vector<double>> prod(std::vector<std::vector<double>> const& le
         for (int j = 0; j < right[0].size(); ++j) {
             res[i][j] = 0;
             for (int k = 0; k < right.size(); ++k) {
-                res[i][j] += left[i][k]*right[k][j];
+                res[i][j] = res[i][j] + left[i][k]*right[k][j];
             }
         }
     }
@@ -138,8 +138,98 @@ void LU_Blocks(std::vector<std::vector<double>> &A, int b){
     }
 }
 
+std::vector<std::vector<double>> difference(std::vector<std::vector<double>> const& right,
+                                            std::vector<std::vector<double>> const& left){
+    std::vector<std::vector<double>> result(right.size());
+    for (int i = 0; i < right.size(); ++i) {
+        result[i] = std::vector<double>(right[0].size());
+        for (int j = 0; j < right[0].size(); ++j) {
+            result[i][j] = right[i][j]-left[i][j];
+        }
+    }
+    return result;
+}
+
+void check_LU_Blocks(std::vector<std::vector<double>> &A, int b){
+        std::vector<std::vector<double>> subA(A[0].size());
+        for (int j = 0; j < A[0].size(); ++j) {
+            subA[j] = std::vector<double>(b);
+            for (int k = 0; k < b; ++k) {
+                subA[j][k] = A[j][k];
+            }
+        }
+        LU(subA);
+        for (int j = 0; j < A[0].size(); ++j) {
+            for (int k = 0; k < b; ++k) {
+                A[j][k] = subA[j][k];
+            }
+        }
+        if ((int) A[0].size()-b > 0) {
+            std::vector<std::vector<double>> subL(b);
+            for (int j = 0; j < b; ++j) {
+                subL[j] = std::vector<double>(b);
+                subL[j][j] = 1;
+                for (int k = j; k < b; ++k) {
+                    subL[j][k] = 0;
+                }
+                for (int k = 0; k < j; ++k) {
+                    subL[j][k] = A[j][k];
+                }
+            }
+            subL = inverse_L(subL);
+            subA = std::vector<std::vector<double>>(b);
+            for (int j = 0; j < b; ++j) {
+                subA[j] = std::vector<double>(A[0].size() - b);
+                for (int k = b; k < A[0].size(); ++k) {
+                    subA[j][k-b] = A[j][k];
+                }
+            }
+            subA = prod(subL, subA);
+            for (int j = 0; j < b; ++j) {
+                for (int k = b; k < A[0].size(); ++k) {
+                    A[j][k] = subA[j][k - b];
+                }
+            }
+            std::vector<std::vector<double>> subA1(A[0].size() - b);
+            for (int j = b; j < A[0].size(); ++j) {
+                subA1[j - b] = std::vector<double>(b);
+                for (int k = 0; k < b; ++k) {
+                    subA1[j - b][k] = A[j][k];
+                }
+            }
+            std::vector<std::vector<double>> subA2(b);
+            for (int j = 0; j < b; ++j) {
+                subA2[j] = std::vector<double>(A[0].size() - b);
+                for (int k = b; k < A[0].size(); ++k) {
+                    subA2[j][k - b] = A[j][k];
+                }
+            }
+            subA = prod(subA1,subA2);
+            for (int j = b; j < A[0].size(); ++j) {
+                for (int k = b; k < A[0].size(); ++k) {
+                    A[j][k] = A[j][k] - subA[j - b][k - b];
+                }
+            }
+            subA = std::vector<std::vector<double>>(A.size()-b);
+            for (int i = 0; i < A.size()-b; ++i) {
+                subA[i] = std::vector<double>(A[0].size()-b);
+                for (int j = 0; j < A[0].size()-b; ++j) {
+                    subA[i][j] = A[i+b][j+b];
+                }
+            }
+            check_LU_Blocks(subA,b);
+            for (int i = 0; i < A.size()-b; ++i) {
+                for (int j = 0; j < A[0].size()-b; ++j) {
+                    A[i+b][j+b] = subA[i][j];
+                }
+            }
+        }
+}
+
 int main() {
     srand(time(0));
+    omp_set_dynamic(0);      // запретить библиотеке openmp менять число потоков во время исполнения
+    omp_set_num_threads(10); // установить число потоков в 10
     int n;
     int m;
     std::cin >> n >> m;
@@ -156,7 +246,9 @@ int main() {
     LU(B);
     std::cout << "После не блочного разложения" << std::endl;
     matrix_out(B);
-    LU_Blocks(A,4);
+    std::cout << "Разница между изначальной и разложением" << std::endl;
+    matrix_out(difference(A,B));
+    check_LU_Blocks(A,4);
     std::cout << "После блочного разложения" << std::endl;
     matrix_out(A);
     for (int i = 0; i < A.size(); ++i) {
