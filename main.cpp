@@ -265,13 +265,13 @@ int main() {
         }
     }
     long int t1 = clock();
-    for (int i = 0; i < 1024; ++i) {
+    for (int i = 0; i < 10; ++i) {
         prod(A,B);
     }
     long int t2 = clock();
     double time1 = (double) (t2-t1)/CLOCKS_PER_SEC;
     t1 = clock();
-    for (int i = 0; i < 1024; ++i) {
+    for (int i = 0; i < 10; ++i) {
         prod_parallel(A,B);
     }
     t2 = clock();
