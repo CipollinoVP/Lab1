@@ -227,6 +227,7 @@ void check_LU_Blocks(std::vector<std::vector<double>> &A, int b){
 }
 
 int main() {
+    int a = 5;
     srand(time(0));
     int n;
     int m;
