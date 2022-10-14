@@ -43,7 +43,7 @@ std::vector<std::vector<double>> prod_parallel(std::vector<std::vector<double>> 
     std::vector<std::vector<double>> res(left.size());
     for (int i = 0; i < left.size(); ++i) {
         res[i] = std::vector<double>(right[0].size());
-#pragma omp parallel for default(none) shared(res,i,left,right) collapse(2)
+#pragma omp parallel for default(none) shared(res,i,left,right)
         for (int j = 0; j < right[0].size(); ++j) {
             res[i][j] = 0;
             for (int k = 0; k < right.size(); ++k) {
