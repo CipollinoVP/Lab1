@@ -347,6 +347,9 @@ int main() {
     LU_Blocks_parallel(B,32);
     t2 = clock();
     double time4 = (double) (t2-t1)/CLOCKS_PER_SEC;
-    std::cout << time1 << "   " << time2 << "  " << time3 << "   " << time4 << std::endl;
+    std::cout << "Неблочное LU-разложение без распараллеливания" << std::endl <<
+    time1 << std::endl <<"Неблочное LU-разложение с распараллеливанием" << std::endl << time2 << std::endl
+    << "Блочное LU-разложение без распараллеливания"<< std::endl << time3 << std::endl
+    << "Блочное LU-разложение с распараллеливанием" << std::endl << time4 << std::endl;
     return 0;
 }
