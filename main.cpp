@@ -336,29 +336,58 @@ int main() {
             j = (double)rand() /RAND_MAX;
         }
     }
-    std::vector<std::vector<double>> B(A);
+    std::vector<std::vector<double>> B1(A);
     long int t1 = clock();
-    LU(B);
+    LU(B1);
     long int t2 = clock();
     double time1 = (double) (t2-t1)/CLOCKS_PER_SEC;
-    B = A;
+    std::vector<std::vector<double>> B2 = A;
     t1 = clock();
-    LU_parallel(B);
+    LU_parallel(B2);
     t2 = clock();
+    double err1 = 0;
+    for (int i = 0; i < B2.size(); ++i) {
+        for (int j = 0; j < B2[0].size(); ++j) {
+            if (err1 < std::abs(B1[i][j]-B2[i][j])) {
+                err1 = std::abs(B1[i][j]-B2[i][j]);
+            }
+        }
+    }
     double time2 = (double) (t2-t1)/CLOCKS_PER_SEC;
-    B = A;
+    std::vector<std::vector<double>> B3 = A;
     t1 = clock();
-    LU_Blocks(B,32);
+    LU_Blocks(B3,32);
     t2 = clock();
+    double err2 = 0;
+    for (int i = 0; i < B3.size(); ++i) {
+        for (int j = 0; j < B3[0].size(); ++j) {
+            if (err2 < std::abs(B1[i][j]-B3[i][j])) {
+                err2 = std::abs(B1[i][j]-B3[i][j]);
+            }
+        }
+    }
     double time3 = (double) (t2-t1)/CLOCKS_PER_SEC;
-    B = A;
+    std::vector<std::vector<double>> B4 = A;
     t1 = clock();
-    LU_Blocks_parallel(B,32);
+    LU_Blocks_parallel(B4,32);
     t2 = clock();
+    double err3 = 0;
+    for (int i = 0; i < B4.size(); ++i) {
+        for (int j = 0; j < B4[0].size(); ++j) {
+            if (err3 < std::abs(B1[i][j]-B4[i][j])) {
+                err3 = std::abs(B1[i][j]-B4[i][j]);
+            }
+        }
+    }
     double time4 = (double) (t2-t1)/CLOCKS_PER_SEC;
-    std::cout << "Неблочное LU-разложение без распараллеливания" << std::endl <<
-    time1 << std::endl <<"Неблочное LU-разложение с распараллеливанием" << std::endl << time2 << std::endl
-    << "Блочное LU-разложение без распараллеливания"<< std::endl << time3 << std::endl
-    << "Блочное LU-разложение с распараллеливанием" << std::endl << time4 << std::endl;
+    std::cout << "Неблочное LU-разложение без распараллеливания" << std::endl << "Время: " <<
+    time1 << std::endl <<"Неблочное LU-разложение с распараллеливанием" << std::endl << "Время " << time2 <<
+    "  Ошибка в сравнении с первыи разложением: " << err1 << std::endl
+    << "Блочное LU-разложение без распараллеливания"<< std::endl << "Время: " << time3 << "  Ошибка в сравнении с первыи разложением: "
+    << err2 << std::endl
+    << "Блочное LU-разложение с распараллеливанием" << std::endl << "Время: " << time4
+    << "  Ошибка в сравнении с первыи разложением: "
+                                                                                       << err3
+                                                                                       << std::endl;
     return 0;
 }
