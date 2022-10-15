@@ -313,7 +313,7 @@ void LU_Blocks_parallel(std::vector<std::vector<double>> &A, int b){
 
 int main() {
     omp_set_dynamic(0);
-    omp_set_num_threads(10);
+    omp_set_num_threads(6);
     int a = 5;
     srand(time(0));
     int n;
