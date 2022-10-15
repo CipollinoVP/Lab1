@@ -356,7 +356,7 @@ int main() {
     double time2 = (double) (t2-t1)/CLOCKS_PER_SEC;
     std::vector<std::vector<double>> B3 = A;
     t1 = clock();
-    LU_Blocks(B3,32);
+    LU_Blocks(B3,16);
     t2 = clock();
     double err2 = 0;
     for (int i = 0; i < B3.size(); ++i) {
@@ -369,7 +369,7 @@ int main() {
     double time3 = (double) (t2-t1)/CLOCKS_PER_SEC;
     std::vector<std::vector<double>> B4 = A;
     t1 = clock();
-    LU_Blocks_parallel(B4,32);
+    LU_Blocks_parallel(B4,16);
     t2 = clock();
     double err3 = 0;
     for (int i = 0; i < B4.size(); ++i) {
