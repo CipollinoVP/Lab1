@@ -33,7 +33,7 @@ std::vector<std::vector<double>> inverse_L_parallel(std::vector<std::vector<doub
         res[i][i] = 1;
     }
     for (int i = 0; i < L.size()-1; ++i) {
-#pragma omp parallel for default(none) shared(res,i,L) collapse(2)
+#pragma omp parallel for default(none) shared(res,i,L)
         for (int j = i+1; j < L.size(); ++j) {
             for (int k = 0; k < L.size(); ++k) {
                 res[j][k] = res[j][k] - res[i][k]*L[j][i];
@@ -63,7 +63,7 @@ std::vector<std::vector<double>> prod_parallel(std::vector<std::vector<double>> 
     std::vector<std::vector<double>> res(left.size());
     for (int i = 0; i < left.size(); ++i) {
         res[i] = std::vector<double>(right[0].size());
-#pragma omp parallel for default(none) shared(res,i,left,right) collapse(2)
+#pragma omp parallel for default(none) shared(res,i,left,right)
         for (int j = 0; j < right[0].size(); ++j) {
             res[i][j] = 0;
             for (int k = 0; k < right.size(); ++k) {
@@ -87,7 +87,7 @@ void LU_parallel(std::vector<std::vector<double>> &A){
             A[j][i] = A[j][i]/A[i][i];
         }
         if (i<A[0].size()){
-#pragma omp parallel for default(none) shared(A,i) collapse(2)
+#pragma omp parallel for default(none) shared(A,i)
             for (int j = i+1; j < A.size(); ++j) {
                 for (int k = i+1; k < A[0].size(); ++k) {
                     A[j][k]=A[j][k]-A[j][i]*A[i][k];
@@ -236,7 +236,7 @@ void LU_Blocks(std::vector<std::vector<double>> &A, int b){
 
 void LU_Blocks_parallel(std::vector<std::vector<double>> &A, int b){
     std::vector<std::vector<double>> subA(A[0].size());
-#pragma omp parallel for default(none) shared(A,b,subA) collapse(2)
+#pragma omp parallel for default(none) shared(A,b,subA)
     for (int j = 0; j < A[0].size(); ++j) {
         subA[j] = std::vector<double>(b);
         for (int k = 0; k < b; ++k) {
@@ -244,7 +244,7 @@ void LU_Blocks_parallel(std::vector<std::vector<double>> &A, int b){
         }
     }
     LU_parallel(subA);
-#pragma omp parallel for default(none) shared(A,b,subA) collapse(2)
+#pragma omp parallel for default(none) shared(A,b,subA)
     for (int j = 0; j < A[0].size(); ++j) {
         for (int k = 0; k < b; ++k) {
             A[j][k] = subA[j][k];
@@ -252,7 +252,7 @@ void LU_Blocks_parallel(std::vector<std::vector<double>> &A, int b){
     }
     if ((int) A[0].size()-b > 0) {
         std::vector<std::vector<double>> subL(b);
-#pragma omp parallel for default(none) shared(A,b,subL) collapse(2)
+#pragma omp parallel for default(none) shared(A,b,subL)
         for (int j = 0; j < b; ++j) {
             subL[j] = std::vector<double>(b);
             subL[j][j] = 1;
@@ -265,7 +265,7 @@ void LU_Blocks_parallel(std::vector<std::vector<double>> &A, int b){
         }
         subL = inverse_L_parallel(subL);
         subA = std::vector<std::vector<double>>(b);
-#pragma omp parallel for default(none) shared(A,b,subA) collapse(2)
+#pragma omp parallel for default(none) shared(A,b,subA)
         for (int j = 0; j < b; ++j) {
             subA[j] = std::vector<double>(A[0].size() - b);
             for (int k = b; k < A[0].size(); ++k) {
@@ -273,14 +273,14 @@ void LU_Blocks_parallel(std::vector<std::vector<double>> &A, int b){
             }
         }
         subA = prod_parallel(subL, subA);
-#pragma omp parallel for default(none) shared(A,b,subA) collapse(2)
+#pragma omp parallel for default(none) shared(A,b,subA)
         for (int j = 0; j < b; ++j) {
             for (int k = b; k < A[0].size(); ++k) {
                 A[j][k] = subA[j][k - b];
             }
         }
         std::vector<std::vector<double>> subA1(A[0].size() - b);
-#pragma omp parallel for default(none) shared(A,b,subA1) collapse(2)
+#pragma omp parallel for default(none) shared(A,b,subA1)
         for (int j = b; j < A[0].size(); ++j) {
             subA1[j - b] = std::vector<double>(b);
             for (int k = 0; k < b; ++k) {
@@ -288,7 +288,7 @@ void LU_Blocks_parallel(std::vector<std::vector<double>> &A, int b){
             }
         }
         std::vector<std::vector<double>> subA2(b);
-#pragma omp parallel for default(none) shared(A,b,subA2) collapse(2)
+#pragma omp parallel for default(none) shared(A,b,subA2)
         for (int j = 0; j < b; ++j) {
             subA2[j] = std::vector<double>(A[0].size() - b);
             for (int k = b; k < A[0].size(); ++k) {
@@ -296,14 +296,14 @@ void LU_Blocks_parallel(std::vector<std::vector<double>> &A, int b){
             }
         }
         subA = prod_parallel(subA1,subA2);
-#pragma omp parallel for default(none) shared(A,b,subA) collapse(2)
+#pragma omp parallel for default(none) shared(A,b,subA)
         for (int j = b; j < A[0].size(); ++j) {
             for (int k = b; k < A[0].size(); ++k) {
                 A[j][k] = A[j][k] - subA[j - b][k - b];
             }
         }
         subA = std::vector<std::vector<double>>(A.size()-b);
-#pragma omp parallel for default(none) shared(A,b,subA) collapse(2)
+#pragma omp parallel for default(none) shared(A,b,subA)
         for (int i = 0; i < A.size()-b; ++i) {
             subA[i] = std::vector<double>(A[0].size()-b);
             for (int j = 0; j < A[0].size()-b; ++j) {
@@ -311,7 +311,7 @@ void LU_Blocks_parallel(std::vector<std::vector<double>> &A, int b){
             }
         }
         LU_Blocks_parallel(subA,b);
-#pragma omp parallel for default(none) shared(A,b,subA) collapse(2)
+#pragma omp parallel for default(none) shared(A,b,subA)
         for (int i = 0; i < A.size()-b; ++i) {
             for (int j = 0; j < A[0].size()-b; ++j) {
                 A[i+b][j+b] = subA[i][j];
