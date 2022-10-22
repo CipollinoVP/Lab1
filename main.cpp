@@ -383,7 +383,6 @@ int main() {
             }
         }
     }
-    matrix_out(difference(B1,B3));
     double time3 = (double) (t2-t1)/CLOCKS_PER_SEC;
     std::vector<std::vector<double>> B4 = A;
     t1 = clock();
@@ -397,7 +396,6 @@ int main() {
             }
         }
     }
-    matrix_out(difference(B4,B1));
     double time4 = (double) (t2-t1)/CLOCKS_PER_SEC;
     std::cout << "Неблочное LU-разложение без распараллеливания" << std::endl << "Время: " <<
     time1 << std::endl <<"Неблочное LU-разложение с распараллеливанием" << std::endl << "Время " << time2 <<
