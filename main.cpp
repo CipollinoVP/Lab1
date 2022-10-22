@@ -288,6 +288,7 @@ void LU_Blocks_parallel(matrix &A, int b) {
                 }
             }
             subA = prod_parallel(subA1, subA2);
+#pragma omp parallel for default(none) shared(A,subA,b,i)
             for (int j = b; j < A[0].size() - i; ++j) {
                 for (int k = b; k < A[0].size() - i; ++k) {
                     A[j+i][k+i] = A[j+i][k+i] - subA[j - b][k - b];
