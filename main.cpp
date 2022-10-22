@@ -351,8 +351,6 @@ void LU_Blocks_parallel(matrix &A, int b){
 }
 
 int main() {
-    omp_set_dynamic(0);
-    omp_set_num_threads(4);
     int a = 5;
     srand(time(0));
     int n;
