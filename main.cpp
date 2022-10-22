@@ -63,7 +63,7 @@ template<typename matrix>
 matrix prod_parallel(matrix const& left,
                      matrix const& right){
     std::vector<std::vector<double>> res(left.size());
-#pragma omp parallel for default(none) shared(res,left,right)
+#pragma omp parallel for default(none) shared(res,left,right) collapse(2)
     for (int i = 0; i < left.size(); ++i) {
         res[i] = std::vector<double>(right[0].size());
         for (int j = 0; j < right[0].size(); ++j) {
