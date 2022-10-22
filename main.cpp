@@ -76,8 +76,7 @@ matrix prod_parallel(matrix const& left,
     return res;
 }
 
-template<typename matrix>
-void LU_parallel(matrix &A){
+void LU_parallel(std::vector<std::vector<double>> &A){
     if (A.empty()){
         return;
     }
@@ -300,7 +299,7 @@ void LU_Blocks_parallel(matrix &A, int b) {
 
 int main() {
     omp_set_dynamic(0);
-    omp_set_num_threads(8);
+    omp_set_num_threads(4);
     int a = 5;
     srand(time(0));
     int n;
