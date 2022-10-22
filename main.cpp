@@ -271,7 +271,6 @@ void LU_Blocks(matrix &A, int b){
                     A[j][k] = A[j][k] - subA[j - b][k - b];
                 }
             }
-            subA = std::vector<std::vector<double>>(A.size()-b);
             sub_matrix nS(A,b,b);
             LU_Blocks(nS,b);
         }
@@ -346,7 +345,6 @@ void LU_Blocks_parallel(matrix &A, int b){
                 A[j][k] = A[j][k] - subA[j - b][k - b];
             }
         }
-        subA = std::vector<std::vector<double>>(A.size()-b);
         sub_matrix nS(A,b,b);
         LU_Blocks_parallel(nS,b);
     }
