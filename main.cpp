@@ -7,49 +7,97 @@
 class sub_vector{
 private:
     std::vector<double> *data;
-    int n0;
+    unsigned long n0;
+    unsigned long nf;
 public:
-    sub_vector(std::vector<double> &A, int n){
+    sub_vector(std::vector<double> &A, unsigned long n){
         data = &A;
         n0 = n;
+        nf = A.size()-1;
     }
-    sub_vector(sub_vector &A, int n){
+    sub_vector(sub_vector &A, unsigned long n){
         data = A.data;
         n0 = A.n0 + n;
+        nf = A.nf;
     }
-    unsigned long size(){
-        return data->size()-n0;
+    sub_vector(std::vector<double> &A, unsigned long n, unsigned long f){
+        data = &A;
+        n0 = n;
+        nf = f;
+    }
+    sub_vector(sub_vector &A, unsigned long n, unsigned long f){
+        data = A.data;
+        n0 = A.n0 + n;
+        nf = A.n0 + f;
+    }
+    [[nodiscard]] unsigned long size() const{
+        return nf-n0+1;
     }
     double& operator[](unsigned long i){
         return data->operator[](i+n0);
+    }
+    [[nodiscard]] bool empty() const{
+        if ((int) nf - n0 < 0){
+            return true;
+        } else {
+            return false;
+        }
     }
 };
 
 class sub_matrix{
 private:
     std::vector<std::vector<double>> *data;
-    int n0;
-    int m0;
+    unsigned long n0;
+    unsigned long m0;
+    unsigned long nf;
+    unsigned long mf;
 public:
-    sub_matrix(std::vector<std::vector<double>> &A, int n, int m){
+    auto operator[](unsigned int i){
+        return sub_vector(data->operator[](n0+i),m0,mf);
+    }
+    sub_matrix(std::vector<std::vector<double>> &A, unsigned long n, unsigned long m){
         data = &A;
         n0 = n;
         m0 = m;
+        nf = A.size()-1;
+        mf = A[0].size() - 1;
     }
-    sub_matrix(sub_matrix &A, int n, int m){
+    sub_matrix(sub_matrix &A, unsigned long n, unsigned long m){
         data = A.data;
         n0 = A.n0 + n;
         m0 = A.m0 + m;
+        nf = A.nf;
+        mf = A.mf;
     }
-    unsigned long size(){
-        return data->size()-n0;
+    sub_matrix(std::vector<std::vector<double>> &A, unsigned long n, unsigned long m, unsigned long fn, unsigned long fm){
+        data = &A;
+        n0 = n;
+        m0 = m;
+        nf = fn;
+        mf = fm;
     }
-    auto operator[](unsigned int i){
-        return sub_vector(data->operator[](n0+i),m0);
+    sub_matrix(sub_matrix &A, unsigned long n, unsigned long m, unsigned long fn, unsigned long fm){
+        data = A.data;
+        n0 = A.n0 + n;
+        m0 = A.m0 + m;
+        nf = A.n0 + fn;
+        mf = A.m0 + fm;
+    }
+    [[nodiscard]] unsigned long size() const{
+        return nf-n0+1;
+    }
+    [[nodiscard]] bool empty() const{
+        if ((int) nf - n0 < 0){
+            return true;
+        } else {
+            return false;
+        }
     }
 };
 
-std::vector<std::vector<double>> inverse_L(std::vector<std::vector<double>> const& L){
+template<typename matrix>
+std::vector<std::vector<double>> inverse_L(matrix& L){
     std::vector<std::vector<double>> res(L.size());
     for (int i = 0; i < L.size(); ++i) {
         res[i] = std::vector<double>(L.size());
@@ -68,8 +116,8 @@ std::vector<std::vector<double>> inverse_L(std::vector<std::vector<double>> cons
     return res;
 }
 
-
-std::vector<std::vector<double>> inverse_L_parallel(std::vector<std::vector<double>> const& L){
+template<typename matrix>
+std::vector<std::vector<double>> inverse_L_parallel(matrix& L){
     std::vector<std::vector<double>> res(L.size());
     for (int i = 0; i < L.size(); ++i) {
         res[i] = std::vector<double>(L.size());
@@ -89,8 +137,9 @@ std::vector<std::vector<double>> inverse_L_parallel(std::vector<std::vector<doub
     return res;
 }
 
-std::vector<std::vector<double>> prod(std::vector<std::vector<double>> const& left,
-                                      std::vector<std::vector<double>> const& right){
+template<typename matrix1,typename matrix2>
+std::vector<std::vector<double>> prod(matrix1& left,
+                                      matrix2& right){
     std::vector<std::vector<double>> res(left.size());
     for (int i = 0; i < left.size(); ++i) {
         res[i] = std::vector<double>(right[0].size());
@@ -104,9 +153,9 @@ std::vector<std::vector<double>> prod(std::vector<std::vector<double>> const& le
     return res;
 }
 
-template<typename matrix>
-matrix prod_parallel(matrix const& left,
-                     matrix const& right){
+template<typename matrix1,typename matrix2>
+std::vector<std::vector<double>> prod_parallel(matrix1& left,
+                     matrix2& right){
     std::vector<std::vector<double>> res(left.size());
     for (int i = 0; i < left.size(); ++i) {
         res[i] = std::vector<double>(right[0].size());
@@ -212,19 +261,8 @@ std::vector<std::vector<double>> difference_parallel(matrix const& right,
 
 template<typename matrix>
 void LU_Blocks(matrix &A, int b){
-        std::vector<std::vector<double>> subA(A[0].size());
-        for (int j = 0; j < A[0].size(); ++j) {
-            subA[j] = std::vector<double>(b);
-            for (int k = 0; k < b; ++k) {
-                subA[j][k] = A[j][k];
-            }
-        }
+        sub_matrix subA(A,0,0,A[0].size()-1,b-1);
         LU(subA);
-        for (int j = 0; j < A[0].size(); ++j) {
-            for (int k = 0; k < b; ++k) {
-                A[j][k] = subA[j][k];
-            }
-        }
         if ((int) A[0].size()-b > 0) {
             std::vector<std::vector<double>> subL(b);
             for (int j = 0; j < b; ++j) {
@@ -238,37 +276,20 @@ void LU_Blocks(matrix &A, int b){
                 }
             }
             subL = inverse_L(subL);
-            subA = std::vector<std::vector<double>>(b);
-            for (int j = 0; j < b; ++j) {
-                subA[j] = std::vector<double>(A[0].size() - b);
-                for (int k = b; k < A[0].size(); ++k) {
-                    subA[j][k-b] = A[j][k];
-                }
-            }
-            subA = prod(subL, subA);
+            subA = sub_matrix(A,0,b,b-1,A[0].size()-1);
+            std::vector<std::vector<double>> subAA = prod(subL, subA);
             for (int j = 0; j < b; ++j) {
                 for (int k = b; k < A[0].size(); ++k) {
-                    A[j][k] = subA[j][k - b];
+                    A[j][k] = subAA[j][k - b];
                 }
             }
-            std::vector<std::vector<double>> subA1(A[0].size() - b);
-            for (int j = b; j < A[0].size(); ++j) {
-                subA1[j - b] = std::vector<double>(b);
-                for (int k = 0; k < b; ++k) {
-                    subA1[j - b][k] = A[j][k];
-                }
-            }
-            std::vector<std::vector<double>> subA2(b);
-            for (int j = 0; j < b; ++j) {
-                subA2[j] = std::vector<double>(A[0].size() - b);
-                for (int k = b; k < A[0].size(); ++k) {
-                    subA2[j][k - b] = A[j][k];
-                }
-            }
-            subA = prod(subA1,subA2);
+
+            sub_matrix subA1(A,b,0,A[0].size()-1,b-1);
+            sub_matrix subA2(A,0,b,b-1,A[0].size()-1);
+            subAA = prod(subA1,subA2);
             for (int j = b; j < A[0].size(); ++j) {
                 for (int k = b; k < A[0].size(); ++k) {
-                    A[j][k] = A[j][k] - subA[j - b][k - b];
+                    A[j][k] = A[j][k] - subAA[j - b][k - b];
                 }
             }
             sub_matrix nS(A,b,b);
@@ -278,21 +299,8 @@ void LU_Blocks(matrix &A, int b){
 
 template<typename matrix>
 void LU_Blocks_parallel(matrix &A, int b){
-    std::vector<std::vector<double>> subA(A[0].size());
-#pragma omp parallel for default(none) shared(A,b,subA)
-    for (int j = 0; j < A[0].size(); ++j) {
-        subA[j] = std::vector<double>(b);
-        for (int k = 0; k < b; ++k) {
-            subA[j][k] = A[j][k];
-        }
-    }
+    sub_matrix subA(A,0,0,A[0].size()-1,b-1);
     LU_parallel(subA);
-#pragma omp parallel for default(none) shared(A,b,subA)
-    for (int j = 0; j < A[0].size(); ++j) {
-        for (int k = 0; k < b; ++k) {
-            A[j][k] = subA[j][k];
-        }
-    }
     if ((int) A[0].size()-b > 0) {
         std::vector<std::vector<double>> subL(b);
 #pragma omp parallel for default(none) shared(A,b,subL)
@@ -307,42 +315,21 @@ void LU_Blocks_parallel(matrix &A, int b){
             }
         }
         subL = inverse_L_parallel(subL);
-        subA = std::vector<std::vector<double>>(b);
-#pragma omp parallel for default(none) shared(A,b,subA)
-        for (int j = 0; j < b; ++j) {
-            subA[j] = std::vector<double>(A[0].size() - b);
-            for (int k = b; k < A[0].size(); ++k) {
-                subA[j][k-b] = A[j][k];
-            }
-        }
-        subA = prod_parallel(subL, subA);
-#pragma omp parallel for default(none) shared(A,b,subA)
+        subA = sub_matrix(A,0,b,b-1,A[0].size()-1);
+        std::vector<std::vector<double>> subAA = prod_parallel(subL, subA);
+#pragma omp parallel for default(none) shared(A,b,subAA)
         for (int j = 0; j < b; ++j) {
             for (int k = b; k < A[0].size(); ++k) {
-                A[j][k] = subA[j][k - b];
+                A[j][k] = subAA[j][k - b];
             }
         }
-        std::vector<std::vector<double>> subA1(A[0].size() - b);
-#pragma omp parallel for default(none) shared(A,b,subA1)
-        for (int j = b; j < A[0].size(); ++j) {
-            subA1[j - b] = std::vector<double>(b);
-            for (int k = 0; k < b; ++k) {
-                subA1[j - b][k] = A[j][k];
-            }
-        }
-        std::vector<std::vector<double>> subA2(b);
-#pragma omp parallel for default(none) shared(A,b,subA2)
-        for (int j = 0; j < b; ++j) {
-            subA2[j] = std::vector<double>(A[0].size() - b);
-            for (int k = b; k < A[0].size(); ++k) {
-                subA2[j][k - b] = A[j][k];
-            }
-        }
-        subA = prod_parallel(subA1,subA2);
-#pragma omp parallel for default(none) shared(A,b,subA)
+        sub_matrix subA1(A,b,0,A[0].size()-1,b-1);
+        sub_matrix subA2(A,0,b,b-1,A[0].size()-1);
+        subAA = prod_parallel(subA1,subA2);
+#pragma omp parallel for default(none) shared(A,b,subAA)
         for (int j = b; j < A[0].size(); ++j) {
             for (int k = b; k < A[0].size(); ++k) {
-                A[j][k] = A[j][k] - subA[j - b][k - b];
+                A[j][k] = A[j][k] - subAA[j - b][k - b];
             }
         }
         sub_matrix nS(A,b,b);
@@ -386,7 +373,7 @@ int main() {
     double time2 = (double) (t2-t1)/CLOCKS_PER_SEC;
     std::vector<std::vector<double>> B3 = A;
     t1 = clock();
-    LU_Blocks(B3,32);
+    LU_Blocks(B3,4);
     t2 = clock();
     double err2 = 0;
     for (int i = 0; i < B3.size(); ++i) {
@@ -396,10 +383,11 @@ int main() {
             }
         }
     }
+    matrix_out(difference(B1,B3));
     double time3 = (double) (t2-t1)/CLOCKS_PER_SEC;
     std::vector<std::vector<double>> B4 = A;
     t1 = clock();
-    LU_Blocks_parallel(B4,32);
+    LU_Blocks_parallel(B4,4);
     t2 = clock();
     double err3 = 0;
     for (int i = 0; i < B4.size(); ++i) {
@@ -409,6 +397,7 @@ int main() {
             }
         }
     }
+    matrix_out(difference(B4,B1));
     double time4 = (double) (t2-t1)/CLOCKS_PER_SEC;
     std::cout << "Неблочное LU-разложение без распараллеливания" << std::endl << "Время: " <<
     time1 << std::endl <<"Неблочное LU-разложение с распараллеливанием" << std::endl << "Время " << time2 <<
