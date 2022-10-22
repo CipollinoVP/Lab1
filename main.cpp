@@ -4,6 +4,51 @@
 #include "vector"
 #include "ctime"
 
+class sub_vector{
+private:
+    std::vector<double> *data;
+    int n0;
+public:
+    sub_vector(std::vector<double> &A, int n){
+        data = &A;
+        n0 = n;
+    }
+    sub_vector(sub_vector &A, int n){
+        data = A.data;
+        n0 = A.n0 + n;
+    }
+    unsigned long size(){
+        return data->size()-n0;
+    }
+    double& operator[](unsigned long i){
+        return data->operator[](i+n0);
+    }
+};
+
+class sub_matrix{
+private:
+    std::vector<std::vector<double>> *data;
+    int n0;
+    int m0;
+public:
+    sub_matrix(std::vector<std::vector<double>> &A, int n, int m){
+        data = &A;
+        n0 = n;
+        m0 = m;
+    }
+    sub_matrix(sub_matrix &A, int n, int m){
+        data = A.data;
+        n0 = A.n0 + n;
+        m0 = A.m0 + m;
+    }
+    unsigned long size(){
+        return data->size()-n0;
+    }
+    auto operator[](unsigned int i){
+        return sub_vector(data->operator[](n0+i),m0);
+    }
+};
+
 std::vector<std::vector<double>> inverse_L(std::vector<std::vector<double>> const& L){
     std::vector<std::vector<double>> res(L.size());
     for (int i = 0; i < L.size(); ++i) {
@@ -22,6 +67,7 @@ std::vector<std::vector<double>> inverse_L(std::vector<std::vector<double>> cons
     }
     return res;
 }
+
 
 std::vector<std::vector<double>> inverse_L_parallel(std::vector<std::vector<double>> const& L){
     std::vector<std::vector<double>> res(L.size());
@@ -58,8 +104,9 @@ std::vector<std::vector<double>> prod(std::vector<std::vector<double>> const& le
     return res;
 }
 
-std::vector<std::vector<double>> prod_parallel(std::vector<std::vector<double>> const& left,
-                                      std::vector<std::vector<double>> const& right){
+template<typename matrix>
+matrix prod_parallel(matrix const& left,
+                     matrix const& right){
     std::vector<std::vector<double>> res(left.size());
     for (int i = 0; i < left.size(); ++i) {
         res[i] = std::vector<double>(right[0].size());
@@ -74,7 +121,8 @@ std::vector<std::vector<double>> prod_parallel(std::vector<std::vector<double>> 
     return res;
 }
 
-void LU_parallel(std::vector<std::vector<double>> &A){
+template<typename matrix>
+void LU_parallel(matrix &A){
     if (A.empty()){
         return;
     }
@@ -97,7 +145,8 @@ void LU_parallel(std::vector<std::vector<double>> &A){
     }
 }
 
-void LU(std::vector<std::vector<double>> &A){
+template<typename matrix>
+void LU(matrix &A){
     if (A.empty()){
         return;
     }
@@ -118,7 +167,8 @@ void LU(std::vector<std::vector<double>> &A){
     }
 }
 
-void matrix_out(std::vector<std::vector<double>> const& A){
+template<typename matrix>
+void matrix_out(matrix const& A){
     if (A.empty()){
         return;
     }
@@ -133,8 +183,9 @@ void matrix_out(std::vector<std::vector<double>> const& A){
     }
 }
 
-std::vector<std::vector<double>> difference(std::vector<std::vector<double>> const& right,
-                                            std::vector<std::vector<double>> const& left){
+template<typename matrix>
+std::vector<std::vector<double>> difference(matrix const& right,
+                                            matrix const& left){
     std::vector<std::vector<double>> result(right.size());
     for (int i = 0; i < right.size(); ++i) {
         result[i] = std::vector<double>(right[0].size());
@@ -145,8 +196,9 @@ std::vector<std::vector<double>> difference(std::vector<std::vector<double>> con
     return result;
 }
 
-std::vector<std::vector<double>> difference_parallel(std::vector<std::vector<double>> const& right,
-                                            std::vector<std::vector<double>> const& left){
+template<typename matrix>
+std::vector<std::vector<double>> difference_parallel(matrix const& right,
+                                                     matrix const& left){
     std::vector<std::vector<double>> result(right.size());
 #pragma omp parallel for default(none) shared(result,right,left)
     for (int i = 0; i < right.size(); ++i) {
@@ -158,7 +210,8 @@ std::vector<std::vector<double>> difference_parallel(std::vector<std::vector<dou
     return result;
 }
 
-void LU_Blocks(std::vector<std::vector<double>> &A, int b){
+template<typename matrix>
+void LU_Blocks(matrix &A, int b){
         std::vector<std::vector<double>> subA(A[0].size());
         for (int j = 0; j < A[0].size(); ++j) {
             subA[j] = std::vector<double>(b);
@@ -219,22 +272,13 @@ void LU_Blocks(std::vector<std::vector<double>> &A, int b){
                 }
             }
             subA = std::vector<std::vector<double>>(A.size()-b);
-            for (int i = 0; i < A.size()-b; ++i) {
-                subA[i] = std::vector<double>(A[0].size()-b);
-                for (int j = 0; j < A[0].size()-b; ++j) {
-                    subA[i][j] = A[i+b][j+b];
-                }
-            }
-            LU_Blocks(subA,b);
-            for (int i = 0; i < A.size()-b; ++i) {
-                for (int j = 0; j < A[0].size()-b; ++j) {
-                    A[i+b][j+b] = subA[i][j];
-                }
-            }
+            sub_matrix nS(A,b,b);
+            LU_Blocks(nS,b);
         }
 }
 
-void LU_Blocks_parallel(std::vector<std::vector<double>> &A, int b){
+template<typename matrix>
+void LU_Blocks_parallel(matrix &A, int b){
     std::vector<std::vector<double>> subA(A[0].size());
 #pragma omp parallel for default(none) shared(A,b,subA)
     for (int j = 0; j < A[0].size(); ++j) {
@@ -303,20 +347,8 @@ void LU_Blocks_parallel(std::vector<std::vector<double>> &A, int b){
             }
         }
         subA = std::vector<std::vector<double>>(A.size()-b);
-#pragma omp parallel for default(none) shared(A,b,subA)
-        for (int i = 0; i < A.size()-b; ++i) {
-            subA[i] = std::vector<double>(A[0].size()-b);
-            for (int j = 0; j < A[0].size()-b; ++j) {
-                subA[i][j] = A[i+b][j+b];
-            }
-        }
-        LU_Blocks_parallel(subA,b);
-#pragma omp parallel for default(none) shared(A,b,subA)
-        for (int i = 0; i < A.size()-b; ++i) {
-            for (int j = 0; j < A[0].size()-b; ++j) {
-                A[i+b][j+b] = subA[i][j];
-            }
-        }
+        sub_matrix nS(A,b,b);
+        LU_Blocks_parallel(nS,b);
     }
 }
 
@@ -356,7 +388,7 @@ int main() {
     double time2 = (double) (t2-t1)/CLOCKS_PER_SEC;
     std::vector<std::vector<double>> B3 = A;
     t1 = clock();
-    LU_Blocks(B3,16);
+    LU_Blocks(B3,32);
     t2 = clock();
     double err2 = 0;
     for (int i = 0; i < B3.size(); ++i) {
@@ -369,7 +401,7 @@ int main() {
     double time3 = (double) (t2-t1)/CLOCKS_PER_SEC;
     std::vector<std::vector<double>> B4 = A;
     t1 = clock();
-    LU_Blocks_parallel(B4,16);
+    LU_Blocks_parallel(B4,32);
     t2 = clock();
     double err3 = 0;
     for (int i = 0; i < B4.size(); ++i) {
