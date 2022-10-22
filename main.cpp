@@ -90,7 +90,7 @@ void LU_parallel(matrix &A){
             A[j][i] = A[j][i]/A[i][i];
         }
         if (i<A[0].size()){
-#pragma omp parallel for default(none) shared(A,i) collapse(2)
+#pragma omp parallel for default(none) shared(A,i)
             for (int j = i+1; j < A.size(); ++j) {
                 for (int k = i+1; k < A[0].size(); ++k) {
                     A[j][k]=A[j][k]-A[j][i]*A[i][k];
