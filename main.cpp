@@ -65,7 +65,7 @@ matrix prod_parallel(matrix const& left,
     std::vector<std::vector<double>> res(left.size());
     for (int i = 0; i < left.size(); ++i) {
         res[i] = std::vector<double>(right[0].size());
-#pragma omp parallel for default(none) shared(res,i,left,right)
+#pragma omp parallel for default(none) shared(res,i,left,right) collapse(2)
         for (int j = 0; j < right[0].size(); ++j) {
             res[i][j] = 0;
             for (int k = 0; k < right.size(); ++k) {
@@ -90,7 +90,7 @@ void LU_parallel(matrix &A){
             A[j][i] = A[j][i]/A[i][i];
         }
         if (i<A[0].size()){
-#pragma omp parallel for default(none) shared(A,i)
+#pragma omp parallel for default(none) shared(A,i) collapse(2)
             for (int j = i+1; j < A.size(); ++j) {
                 for (int k = i+1; k < A[0].size(); ++k) {
                     A[j][k]=A[j][k]-A[j][i]*A[i][k];
